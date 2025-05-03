@@ -1,4 +1,3 @@
-/* Mobile/Small Screen Selector */
 #header > div > ul.nav.rbx-navbar.hidden-md.hidden-lg.col-xs-12 > li:nth-child(1) > a.font-header-2.nav-menu-title.text-header.charts-rename-exp-treatment.btr-nav-node-header_charts_rename {
   font-size: 0 !important;
   position: relative !important;
@@ -12,7 +11,6 @@
   top: 0 !important;
 }
 
-/* Desktop Selector (new one) */
 .col-lg-4.col-md-5.hidden-sm.hidden-xs.rbx-navbar.nav > li > .btr-nav-node-header_charts_rename.charts-rename-exp-treatment.text-header.nav-menu-title.font-header-2 {
   font-size: 0 !important;
   position: relative !important;
@@ -26,7 +24,6 @@
   top: 0 !important;
 }
 
-/* Class-based selectors */
 a.font-header-2.nav-menu-title.text-header[href="/discover"],
 a.font-header-2.nav-menu-title.text-header[href^="/discover/"] {
   font-size: 0 !important;
@@ -42,7 +39,6 @@ a.font-header-2.nav-menu-title.text-header[href^="/discover/"]::after {
   top: 0 !important;
 }
 
-/* Generic backup selectors */
 a[href="/discover"],
 a[href^="/discover/"] {
   font-size: 0 !important;
