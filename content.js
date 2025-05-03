@@ -22,29 +22,63 @@ const PLAY_SPECIFIC_GAME_SELECTOR = "#play-8425637426";
 const FEATURED_GAME_PLAY_SELECTOR_1 = "#\\37 441031935 > div > a > div.featured-game-icon-container.ropro-card-quick-play > div > a:nth-child(1) > button";
 const FEATURED_GAME_PLAY_SELECTOR_2 = "#\\37 441031935 > div > a > div.featured-game-icon-container.ropro-card-quick-play > div > a:nth-child(2) > button";
 const JOIN_GAME_BUTTON_SELECTOR = "#join-game-button";
+const ITEM_PURCHASE_BUTTON_SELECTOR = "#item-details > div.price-row-container > div > div > div.price-info.row-content > div.shopping-cart-buy-button.item-purchase-btns-container > div:nth-child(1) > button";
 const DEFAULT_BUTTON_COLOR = "#00B06F";
 let BUTTON_COLOR = DEFAULT_BUTTON_COLOR;
+// Feature flags - default to true
+let OG_GAMES_ENABLED = true;
+let OG_GROUPS_ENABLED = true;
+let OG_CATALOG_ENABLED = true;
 
-function loadButtonColor() {
+function loadSettings() {
   try {
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.sync.get('buttonColor', function(data) {
+      chrome.storage.sync.get(['buttonColor', 'ogGames', 'ogGroups', 'ogCatalog'], function(data) {
+        // Load button color
         if (data.buttonColor) {
           BUTTON_COLOR = data.buttonColor;
           console.log(`Roblox++: Loaded custom button color: ${BUTTON_COLOR}`);
-          applyCustomStyles();
         }
+        
+        // Load feature flags (default to true if not set)
+        OG_GAMES_ENABLED = data.ogGames !== undefined ? data.ogGames : true;
+        OG_GROUPS_ENABLED = data.ogGroups !== undefined ? data.ogGroups : true;
+        OG_CATALOG_ENABLED = data.ogCatalog !== undefined ? data.ogCatalog : true;
+        
+        console.log(`Roblox++: Loaded settings - OG Games: ${OG_GAMES_ENABLED}, OG Groups: ${OG_GROUPS_ENABLED}, OG Catalog: ${OG_CATALOG_ENABLED}`);
+        
+        applyAllChanges();
       });
     }
   } catch (e) {
-    console.error('Roblox++: Error loading button color from storage', e);
+    console.error('Roblox++: Error loading settings from storage', e);
     BUTTON_COLOR = DEFAULT_BUTTON_COLOR;
+    OG_GAMES_ENABLED = true;
+    OG_GROUPS_ENABLED = true;
+    OG_CATALOG_ENABLED = true;
   }
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    if (message.action === 'updateButtonColor') {
+    if (message.action === 'updateSettings') {
+      if (message.settings) {
+        // Update button color
+        BUTTON_COLOR = message.settings.buttonColor;
+        
+        // Update feature flags
+        OG_GAMES_ENABLED = message.settings.ogGames;
+        OG_GROUPS_ENABLED = message.settings.ogGroups;
+        OG_CATALOG_ENABLED = message.settings.ogCatalog;
+        
+        console.log(`Roblox++: Updated settings - Button color: ${BUTTON_COLOR}, OG Games: ${OG_GAMES_ENABLED}, OG Groups: ${OG_GROUPS_ENABLED}, OG Catalog: ${OG_CATALOG_ENABLED}`);
+        
+        // Apply changes immediately
+        applyAllChanges();
+        sendResponse({success: true});
+      }
+    } else if (message.action === 'updateButtonColor') {
+      // Legacy support for old popup
       BUTTON_COLOR = message.color;
       console.log(`Roblox++: Updated button color to ${BUTTON_COLOR}`);
       applyCustomStyles();
@@ -98,7 +132,8 @@ function findAndColorJoinButtons() {
     FEATURED_GAME_PLAY_SELECTOR_2,
     JOIN_GAME_BUTTON_SELECTOR,
     SHOPPING_CART_CHECKOUT_BUTTON,
-    SHOPPING_CART_BUTTON
+    SHOPPING_CART_BUTTON,
+    ITEM_PURCHASE_BUTTON_SELECTOR
   ];
   
   for (let i = 0; i < specificButtons.length; i++) {
@@ -201,6 +236,11 @@ function findAndColorJoinButtons() {
 }
 
 function changeMarketplaceToCatalog() {
+  // Skip if OG Catalog is disabled
+  if (!OG_CATALOG_ENABLED) {
+    return false;
+  }
+  
   let success = false;
   
   const marketplaceNavElement = document.querySelector(MARKETPLACE_NAV_SELECTOR);
@@ -223,6 +263,11 @@ function applyCustomStyles() {
 }
 
 function changeCommunityToGroups() {
+  // Skip if OG Groups is disabled
+  if (!OG_GROUPS_ENABLED) {
+    return false;
+  }
+  
   let success = false;
   
   const communitiesElement = document.querySelector(COMMUNITIES_SELECTOR);
@@ -300,6 +345,11 @@ function changeCommunityToGroups() {
 }
 
 function findAndReplaceChartsLinks() {
+  // Skip if OG Games is disabled
+  if (!OG_GAMES_ENABLED) {
+    return false;
+  }
+  
   const allLinks = document.querySelectorAll('a');
   let chartsLinksFound = 0;
   let replacedLinks = 0;
@@ -372,11 +422,21 @@ function resetShoppingCartIconColor() {
 }
 
 function applyAllChanges() {
-  loadButtonColor();
   updatePageTitle();
-  findAndReplaceChartsLinks();
-  changeCommunityToGroups();
-  changeMarketplaceToCatalog();
+  
+  // Apply changes based on feature flags
+  if (OG_GAMES_ENABLED) {
+    findAndReplaceChartsLinks();
+  }
+  
+  if (OG_GROUPS_ENABLED) {
+    changeCommunityToGroups();
+  }
+  
+  if (OG_CATALOG_ENABLED) {
+    changeMarketplaceToCatalog();
+  }
+  
   applyCustomStyles();
   resetShoppingCartIconColor();
   
@@ -417,7 +477,7 @@ function setupObservers() {
 }
 
 (function() {
-  applyAllChanges();
+  loadSettings();
   
   if (document.head) {
     updatePageTitle();
@@ -430,7 +490,7 @@ function setupObservers() {
   window.addEventListener('load', applyAllChanges, { once: true });
   
   let checkCount = 0;
-  const maxChecks = 20; 
+  const maxChecks = 20;
   const rapidCheck = setInterval(() => {
     applyAllChanges();
     checkCount++;
