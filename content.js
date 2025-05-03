@@ -1,45 +1,58 @@
 const EXACT_SELECTOR = "#header > div > ul.nav.rbx-navbar.hidden-md.hidden-lg.col-xs-12 > li:nth-child(1) > a.font-header-2.nav-menu-title.text-header.charts-rename-exp-treatment.btr-nav-node-header_charts_rename";
-
 const REPLACEMENT_HTML = '<a class="font-header-2 nav-menu-title text-header charts-rename-exp-treatment" href="/charts">Games</a>';
-
 const CHARTS_HEADING_SELECTOR = "#games-carousel-page > div > div > div.games-list-header > h1";
-
 const COMMUNITIES_SELECTOR = "#nav-group > span";
-
 const MORE_COMMUNITIES_SELECTOR = "#group-container > div > div > div.container-header.see-all-container-header.ng-scope > a";
-
 const COMMUNITIES_HEADING_SELECTOR = "#group-container > div > div > div.container-header.see-all-container-header.ng-scope > h1";
-
 const SEARCH_COMMUNITIES_SELECTOR = "#group-container > div > div > groups-list > div.menu-vertical-container > div.input-group.group-search-input > input";
-
 const MY_COMMUNITIES_SELECTOR = "#group-search-web-app > div > div.container-header.see-all-container-header > div > a";
-
 const SEARCH_COMMUNITIES_HEADING_SELECTOR = "#group-search-web-app > div > div.container-header.see-all-container-header > h1";
-
 const FRIENDS_COMMUNITIES_SELECTOR = "#group-search-web-app > div > group-landing > friends-groups > div.container-header > h2";
-
 const TRENDING_EVENTS_HEADING_SELECTOR = "#games-carousel-page > div > h1";
-
 const TRENDING_EVENTS_SUBHEADING_SELECTOR = "#games-carousel-page > div > div > div:nth-child(7) > div.game-sort-header-container > div > h2 > a";
-
 const TRENDING_MUSIC_SUBHEADING_SELECTOR = "#games-carousel-page > div > div > div:nth-child(13) > div.game-sort-header-container > div.container-header.games-filter-changer > h2 > a";
-
 const MARKETPLACE_NAV_SELECTOR = "#header > div > ul.nav.rbx-navbar.hidden-xs.hidden-sm.col-md-5.col-lg-4 > li:nth-child(2) > a";
-
 const MARKETPLACE_HEADER_SELECTOR = "#catalog-content > div.catalog-header > div.search-bars.search-bar-placement-right > div.heading-container > h1 > a";
-
 const SHOPPING_CART_CHECKOUT_BUTTON = "#search-bar > div > div.buy-btns-container > div.shopping-cart-btn-container > div > div > div.shopping-cart-footer > button";
 const SHOPPING_CART_BUTTON = "#search-bar > div > div.buy-btns-container > a";
 const SHOPPING_CART_ICON_BUTTON = "#search-bar > div > div.buy-btns-container > div.shopping-cart-btn-container > button";
-
 const PLAY_BUTTON_SELECTOR = "#game-details-play-button-container > button";
 const RANDOM_SERVER_BUTTON_SELECTOR = "#game-details-play-button-container > button.btn-full-width.btn-common-play-game-lg.btn-primary-md.btn-min-width.random-server-button";
 const PLAY_SPECIFIC_GAME_SELECTOR = "#play-8425637426";
 const FEATURED_GAME_PLAY_SELECTOR_1 = "#\\37 441031935 > div > a > div.featured-game-icon-container.ropro-card-quick-play > div > a:nth-child(1) > button";
 const FEATURED_GAME_PLAY_SELECTOR_2 = "#\\37 441031935 > div > a > div.featured-game-icon-container.ropro-card-quick-play > div > a:nth-child(2) > button";
 const JOIN_GAME_BUTTON_SELECTOR = "#join-game-button";
+const DEFAULT_BUTTON_COLOR = "#00B06F";
+let BUTTON_COLOR = DEFAULT_BUTTON_COLOR;
 
-const BUTTON_COLOR = "#00B06F";
+function loadButtonColor() {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.sync.get('buttonColor', function(data) {
+        if (data.buttonColor) {
+          BUTTON_COLOR = data.buttonColor;
+          console.log(`Roblox++: Loaded custom button color: ${BUTTON_COLOR}`);
+          applyCustomStyles();
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Roblox++: Error loading button color from storage', e);
+    BUTTON_COLOR = DEFAULT_BUTTON_COLOR;
+  }
+}
+
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    if (message.action === 'updateButtonColor') {
+      BUTTON_COLOR = message.color;
+      console.log(`Roblox++: Updated button color to ${BUTTON_COLOR}`);
+      applyCustomStyles();
+      sendResponse({success: true});
+    }
+    return true;
+  });
+}
 
 function updatePageTitle() {
   let success = false;
@@ -77,7 +90,6 @@ function changeButtonColor(selector) {
 
 function findAndColorJoinButtons() {
   let success = false;
-  
   const specificButtons = [
     PLAY_BUTTON_SELECTOR,
     RANDOM_SERVER_BUTTON_SELECTOR,
@@ -89,103 +101,97 @@ function findAndColorJoinButtons() {
     SHOPPING_CART_BUTTON
   ];
   
-  specificButtons.forEach(selector => {
-    if (changeButtonColor(selector)) {
-      console.log(`Roblox++: Changed ${selector} color to ${BUTTON_COLOR}`);
+  for (let i = 0; i < specificButtons.length; i++) {
+    if (changeButtonColor(specificButtons[i])) {
       success = true;
     }
-  });
+  }
   
   try {
     const friendListJoinButtons = document.querySelectorAll('.friend-carousel-container button.btn-growth-sm.btn-full-width');
     if (friendListJoinButtons.length > 0) {
-      friendListJoinButtons.forEach(button => {
-        if (button.textContent.includes('Join')) {
-          button.style.backgroundColor = BUTTON_COLOR;
-          button.style.borderColor = BUTTON_COLOR;
+      for (let i = 0; i < friendListJoinButtons.length; i++) {
+        if (friendListJoinButtons[i].textContent.includes('Join')) {
+          friendListJoinButtons[i].style.backgroundColor = BUTTON_COLOR;
+          friendListJoinButtons[i].style.borderColor = BUTTON_COLOR;
         }
-      });
-      console.log(`Roblox++: Changed ${friendListJoinButtons.length} friend list join buttons to ${BUTTON_COLOR}`);
+      }
       success = true;
     }
     
     const standardPlayButtons = document.querySelectorAll('.btn-full-width.btn-common-play-game-lg.btn-primary-md.btn-min-width');
     if (standardPlayButtons.length > 0) {
-      standardPlayButtons.forEach(button => {
-        button.style.backgroundColor = BUTTON_COLOR;
-        button.style.borderColor = BUTTON_COLOR;
-      });
-      console.log(`Roblox++: Changed ${standardPlayButtons.length} standard play buttons to ${BUTTON_COLOR}`);
+      for (let i = 0; i < standardPlayButtons.length; i++) {
+        standardPlayButtons[i].style.backgroundColor = BUTTON_COLOR;
+        standardPlayButtons[i].style.borderColor = BUTTON_COLOR;
+      }
       success = true;
     }
     
     const serverJoinButtons = document.querySelectorAll('button.rbx-game-server-join');
     if (serverJoinButtons.length > 0) {
-      serverJoinButtons.forEach(button => {
-        button.style.backgroundColor = BUTTON_COLOR;
-        button.style.borderColor = BUTTON_COLOR;
-      });
-      console.log(`Roblox++: Changed ${serverJoinButtons.length} server join buttons to ${BUTTON_COLOR}`);
+      for (let i = 0; i < serverJoinButtons.length; i++) {
+        serverJoinButtons[i].style.backgroundColor = BUTTON_COLOR;
+        serverJoinButtons[i].style.borderColor = BUTTON_COLOR;
+      }
       success = true;
     }
     
     const roProJoinButtons = document.querySelectorAll('.roproquickjoin, .ropro-quick-play button, .ropro-card-quick-play button');
     if (roProJoinButtons.length > 0) {
-      roProJoinButtons.forEach(button => {
-        button.style.backgroundColor = BUTTON_COLOR;
-        button.style.borderColor = BUTTON_COLOR;
-      });
-      console.log(`Roblox++: Changed ${roProJoinButtons.length} RoPro join buttons to ${BUTTON_COLOR}`);
+      for (let i = 0; i < roProJoinButtons.length; i++) {
+        roProJoinButtons[i].style.backgroundColor = BUTTON_COLOR;
+        roProJoinButtons[i].style.borderColor = BUTTON_COLOR;
+      }
       success = true;
     }
     
     const roProRandomButtons = document.querySelectorAll('.roprorandomserver button, button.roprorandomserver');
     if (roProRandomButtons.length > 0) {
-      roProRandomButtons.forEach(button => {
-        button.style.backgroundColor = BUTTON_COLOR;
-        button.style.borderColor = BUTTON_COLOR;
-      });
-      console.log(`Roblox++: Changed ${roProRandomButtons.length} RoPro random server buttons to ${BUTTON_COLOR}`);
+      for (let i = 0; i < roProRandomButtons.length; i++) {
+        roProRandomButtons[i].style.backgroundColor = BUTTON_COLOR;
+        roProRandomButtons[i].style.borderColor = BUTTON_COLOR;
+      }
       success = true;
     }
     
     const pinnedGameButtons = document.querySelectorAll('.pin-button button, .pinned-game button, .pinned-game-card button');
     if (pinnedGameButtons.length > 0) {
-      pinnedGameButtons.forEach(button => {
-        if (button.textContent.includes('Join') || button.textContent.includes('Play')) {
-          button.style.backgroundColor = BUTTON_COLOR;
-          button.style.borderColor = BUTTON_COLOR;
+      for (let i = 0; i < pinnedGameButtons.length; i++) {
+        const btn = pinnedGameButtons[i];
+        if (btn.textContent.includes('Join') || btn.textContent.includes('Play')) {
+          btn.style.backgroundColor = BUTTON_COLOR;
+          btn.style.borderColor = BUTTON_COLOR;
         }
-      });
-      console.log(`Roblox++: Changed ${pinnedGameButtons.length} pinned game buttons to ${BUTTON_COLOR}`);
+      }
       success = true;
     }
     
     const shoppingCartButtons = document.querySelectorAll('.shopping-cart-btn-container button, .buy-btns-container a.btn-primary-md');
     if (shoppingCartButtons.length > 0) {
-      shoppingCartButtons.forEach(button => {
-        if (!button.matches(SHOPPING_CART_ICON_BUTTON)) {
-          button.style.backgroundColor = BUTTON_COLOR;
-          button.style.borderColor = BUTTON_COLOR;
+      for (let i = 0; i < shoppingCartButtons.length; i++) {
+        if (!shoppingCartButtons[i].matches(SHOPPING_CART_ICON_BUTTON)) {
+          shoppingCartButtons[i].style.backgroundColor = BUTTON_COLOR;
+          shoppingCartButtons[i].style.borderColor = BUTTON_COLOR;
         }
-      });
-      console.log(`Roblox++: Changed ${shoppingCartButtons.length} shopping cart buttons to ${BUTTON_COLOR}`);
+      }
       success = true;
     }
     
     const otherButtons = document.querySelectorAll('button.btn-primary-md, button.btn-growth-md');
     if (otherButtons.length > 0) {
-      otherButtons.forEach(button => {
-        if ((button.textContent.includes('Join') || button.textContent.includes('Play') || 
-             button.textContent.includes('Checkout') || button.textContent.includes('Buy') ||
-             button.matches(SHOPPING_CART_BUTTON)) && 
-            !button.closest('.avatar-card') && 
-            !button.classList.contains('profile-selector') && 
-            !button.matches(SHOPPING_CART_ICON_BUTTON)) { 
-          button.style.backgroundColor = BUTTON_COLOR;
-          button.style.borderColor = BUTTON_COLOR;
+      for (let i = 0; i < otherButtons.length; i++) {
+        const btn = otherButtons[i];
+        if ((btn.textContent.includes('Join') || btn.textContent.includes('Play') || 
+             btn.textContent.includes('Checkout') || btn.textContent.includes('Buy') ||
+             btn.matches(SHOPPING_CART_BUTTON)) && 
+            !btn.closest('.avatar-card') && 
+            !btn.classList.contains('profile-selector') && 
+            !btn.matches(SHOPPING_CART_ICON_BUTTON)) { 
+          btn.style.backgroundColor = BUTTON_COLOR;
+          btn.style.borderColor = BUTTON_COLOR;
         }
-      });
+      }
     }
   } catch (e) {
     console.error('Roblox++: Error finding join buttons', e);
@@ -200,14 +206,12 @@ function changeMarketplaceToCatalog() {
   const marketplaceNavElement = document.querySelector(MARKETPLACE_NAV_SELECTOR);
   if (marketplaceNavElement && marketplaceNavElement.textContent.trim() === "Marketplace") {
     marketplaceNavElement.textContent = "Catalog";
-    console.log("Roblox++: Changed 'Marketplace' to 'Catalog' in navigation");
     success = true;
   }
   
   const marketplaceHeaderElement = document.querySelector(MARKETPLACE_HEADER_SELECTOR);
   if (marketplaceHeaderElement && marketplaceHeaderElement.textContent.trim() === "Marketplace") {
     marketplaceHeaderElement.textContent = "Catalog";
-    console.log("Roblox++: Changed 'Marketplace' to 'Catalog' in header");
     success = true;
   }
   
@@ -215,11 +219,7 @@ function changeMarketplaceToCatalog() {
 }
 
 function applyCustomStyles() {
-  let success = false;
-  
-  success = findAndColorJoinButtons() || success;
-  
-  return success;
+  return findAndColorJoinButtons();
 }
 
 function changeCommunityToGroups() {
@@ -228,21 +228,18 @@ function changeCommunityToGroups() {
   const communitiesElement = document.querySelector(COMMUNITIES_SELECTOR);
   if (communitiesElement && communitiesElement.textContent.trim() === "Communities") {
     communitiesElement.textContent = "Groups";
-    console.log("Roblox++: Changed 'Communities' to 'Groups' in navigation");
     success = true;
   }
   
   const moreCommunitiesElement = document.querySelector(MORE_COMMUNITIES_SELECTOR);
   if (moreCommunitiesElement && moreCommunitiesElement.textContent.trim() === "More Communities") {
     moreCommunitiesElement.textContent = "More Groups";
-    console.log("Roblox++: Changed 'More Communities' to 'More Groups'");
     success = true;
   }
   
   const communitiesHeadingElement = document.querySelector(COMMUNITIES_HEADING_SELECTOR);
   if (communitiesHeadingElement && communitiesHeadingElement.textContent.trim() === "Communities") {
     communitiesHeadingElement.textContent = "Groups";
-    console.log("Roblox++: Changed 'Communities' heading to 'Groups'");
     success = true;
   }
   
@@ -250,14 +247,12 @@ function changeCommunityToGroups() {
   if (searchCommunitiesElement && searchCommunitiesElement.getAttribute("placeholder") && 
       searchCommunitiesElement.getAttribute("placeholder").includes("Search My Communities")) {
     searchCommunitiesElement.setAttribute("placeholder", "Search My Groups");
-    console.log("Roblox++: Changed 'Search My Communities' to 'Search My Groups'");
     success = true;
   }
   
   const myCommunitiesElement = document.querySelector(MY_COMMUNITIES_SELECTOR);
   if (myCommunitiesElement && myCommunitiesElement.textContent.trim() === "My Communities") {
     myCommunitiesElement.textContent = "My Groups";
-    console.log("Roblox++: Changed 'My Communities' to 'My Groups'");
     success = true;
   }
   
@@ -265,11 +260,9 @@ function changeCommunityToGroups() {
   if (searchCommunitiesHeadingElement) {
     if (searchCommunitiesHeadingElement.textContent.trim() === "Search Communities") {
       searchCommunitiesHeadingElement.textContent = "Search Groups";
-      console.log("Roblox++: Changed 'Search Communities' to 'Search Groups'");
       success = true;
     } else if (searchCommunitiesHeadingElement.textContent.includes("Community Results For")) {
       searchCommunitiesHeadingElement.textContent = searchCommunitiesHeadingElement.textContent.replace("Community Results For", "Group Results For");
-      console.log("Roblox++: Changed 'Community Results For' to 'Group Results For'");
       success = true;
     }
   }
@@ -277,7 +270,6 @@ function changeCommunityToGroups() {
   const friendsCommunitiesElement = document.querySelector(FRIENDS_COMMUNITIES_SELECTOR);
   if (friendsCommunitiesElement && friendsCommunitiesElement.textContent.trim() === "Friends' Communities") {
     friendsCommunitiesElement.textContent = "Friends' Groups";
-    console.log("Roblox++: Changed 'Friends' Communities' to 'Friends' Groups'");
     success = true;
   }
   
@@ -285,11 +277,9 @@ function changeCommunityToGroups() {
   if (trendingEventsHeading) {
     if (trendingEventsHeading.textContent.includes("Trending Events in Experiences")) {
       trendingEventsHeading.textContent = trendingEventsHeading.textContent.replace("Trending Events in Experiences", "Trending Events in Games");
-      console.log("Roblox++: Changed 'Trending Events in Experiences' to 'Trending Events in Games' (main heading)");
       success = true;
     } else if (trendingEventsHeading.textContent.includes("Trending Music Experiences")) {
       trendingEventsHeading.textContent = trendingEventsHeading.textContent.replace("Trending Music Experiences", "Trending Music Games");
-      console.log("Roblox++: Changed 'Trending Music Experiences' to 'Trending Music Games' (main heading)");
       success = true;
     }
   }
@@ -297,14 +287,12 @@ function changeCommunityToGroups() {
   const trendingEventsSubheading = document.querySelector(TRENDING_EVENTS_SUBHEADING_SELECTOR);
   if (trendingEventsSubheading && trendingEventsSubheading.textContent.includes("Trending Events in Experiences")) {
     trendingEventsSubheading.textContent = trendingEventsSubheading.textContent.replace("Trending Events in Experiences", "Trending Events in Games");
-    console.log("Roblox++: Changed 'Trending Events in Experiences' to 'Trending Events in Games' (sub-heading)");
     success = true;
   }
   
   const trendingMusicSubheading = document.querySelector(TRENDING_MUSIC_SUBHEADING_SELECTOR);
   if (trendingMusicSubheading && trendingMusicSubheading.textContent.includes("Trending Music Experiences")) {
     trendingMusicSubheading.textContent = trendingMusicSubheading.textContent.replace("Trending Music Experiences", "Trending Music Games");
-    console.log("Roblox++: Changed 'Trending Music Experiences' to 'Trending Music Games' (sub-heading)");
     success = true;
   }
   
@@ -312,13 +300,12 @@ function changeCommunityToGroups() {
 }
 
 function findAndReplaceChartsLinks() {
-  console.log("Roblox++: Searching for 'Charts' links...");
-  
   const allLinks = document.querySelectorAll('a');
   let chartsLinksFound = 0;
   let replacedLinks = 0;
   
-  allLinks.forEach((link, index) => {
+  for (let i = 0; i < allLinks.length; i++) {
+    const link = allLinks[i];
     if (link.textContent.trim() === "Charts") {
       chartsLinksFound++;
       
@@ -328,17 +315,20 @@ function findAndReplaceChartsLinks() {
         
         const newLink = temp.firstChild;
         
-        Array.from(link.classList).forEach(cls => {
-          if (!newLink.classList.contains(cls)) {
-            newLink.classList.add(cls);
+        const classes = link.classList;
+        for (let j = 0; j < classes.length; j++) {
+          if (!newLink.classList.contains(classes[j])) {
+            newLink.classList.add(classes[j]);
           }
-        });
+        }
         
-        Array.from(link.attributes).forEach(attr => {
+        const attributes = link.attributes;
+        for (let j = 0; j < attributes.length; j++) {
+          const attr = attributes[j];
           if (attr.name !== 'href' && attr.name !== 'class') {
             newLink.setAttribute(attr.name, attr.value);
           }
-        });
+        }
         
         link.parentNode.replaceChild(newLink, link);
         replacedLinks++;
@@ -346,20 +336,17 @@ function findAndReplaceChartsLinks() {
         console.log(`Roblox++: Error replacing Charts link #${chartsLinksFound}`, e);
       }
     }
-  });
+  }
   
   try {
     const chartsHeading = document.querySelector(CHARTS_HEADING_SELECTOR);
     if (chartsHeading && chartsHeading.textContent.trim() === "Charts") {
       chartsHeading.textContent = "Games";
-      console.log("Roblox++: Successfully replaced Charts heading with Games");
       replacedLinks++;
     }
   } catch (e) {
     console.log("Roblox++: Error replacing Charts heading", e);
   }
-  
-  console.log(`Roblox++: Found ${chartsLinksFound} links with text 'Charts', replaced ${replacedLinks} elements total`);
   
   return replacedLinks > 0;
 }
@@ -371,7 +358,6 @@ function resetShoppingCartIconColor() {
   if (shoppingCartIcon) {
     shoppingCartIcon.style.backgroundColor = BUTTON_COLOR;
     shoppingCartIcon.style.borderColor = BUTTON_COLOR;
-    console.log("Roblox++: Set shopping cart icon color to green");
     success = true;
   }
   
@@ -379,7 +365,6 @@ function resetShoppingCartIconColor() {
   if (shoppingCartIconButton) {
     shoppingCartIconButton.style.backgroundColor = '';
     shoppingCartIconButton.style.borderColor = '';
-    console.log("Roblox++: Reset additional shopping cart button color to default");
     success = true;
   }
   
@@ -387,7 +372,7 @@ function resetShoppingCartIconColor() {
 }
 
 function applyAllChanges() {
-  console.log("Roblox++: Applying immediate changes!");
+  loadButtonColor();
   updatePageTitle();
   findAndReplaceChartsLinks();
   changeCommunityToGroups();
@@ -399,7 +384,7 @@ function applyAllChanges() {
 }
 
 function setupObservers() {
-  const mainObserver = new MutationObserver((mutations) => {
+  const mainObserver = new MutationObserver(() => {
     updatePageTitle();
     findAndReplaceChartsLinks();
     changeCommunityToGroups();
@@ -415,7 +400,6 @@ function setupObservers() {
       attributes: true,
       characterData: true
     });
-    console.log("Roblox++: Main observer started");
   }
   
   const titleObserver = new MutationObserver(() => {
@@ -426,7 +410,6 @@ function setupObservers() {
     const titleElement = document.querySelector('title');
     if (titleElement) {
       titleObserver.observe(titleElement, { childList: true, characterData: true, subtree: true });
-      console.log("Roblox++: Title observer started");
     } else {
       titleObserver.observe(document.head, { childList: true, subtree: true });
     }
@@ -434,8 +417,6 @@ function setupObservers() {
 }
 
 (function() {
-  console.log("Roblox++: Starting with IMMEDIATE execution mode!");
-  
   applyAllChanges();
   
   if (document.head) {
